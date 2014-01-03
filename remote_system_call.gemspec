@@ -12,11 +12,11 @@ Gem::Specification.new do |s|
   s.licenses = ['MIT']
 
   s.description = <<DESCRIPTION
-TODO:
+Stuff about this gem.
 DESCRIPTION
 
   s.summary = <<SUMMARY
-TODO:
+Stuff about this gem.
 SUMMARY
 
   s.extra_rdoc_files = ['README.rdoc']
