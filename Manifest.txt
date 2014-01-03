@@ -3,6 +3,7 @@ Manifest.txt
 README.rdoc
 TODO.txt
 bin/remote_system_call
+config/config.json
 data/VERSION
 features/main.feature
 features/step_definitions/main_steps.rb

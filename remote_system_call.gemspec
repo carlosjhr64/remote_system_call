@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.author   = 'CarlosJHR64'
   s.email    = 'carlosjhr64@gmail.com'
 
-  s.date     = '2014-01-02'
+  s.date     = '2014-01-03'
   s.licenses = ['MIT']
 
   s.description = <<DESCRIPTION
@@ -29,6 +29,7 @@ Manifest.txt
 README.rdoc
 TODO.txt
 bin/remote_system_call
+config/config.json
 data/VERSION
 features/main.feature
 features/step_definitions/main_steps.rb
@@ -43,8 +44,9 @@ test/remote_system_call.rb
   s.add_runtime_dependency 'user_space', '~> 0.2', '>= 0.2.0'
   s.add_runtime_dependency 'help_parser', '~> 1.1', '>= 1.1.0'
   s.add_development_dependency 'test-unit', '~> 2.5', '>= 2.5.5'
-  s.requirements << 'system: linux/bash'
   s.requirements << 'ruby: ruby 2.0.0p247 (2013-06-27 revision 41674) [x86_64-linux]'
   s.requirements << 'zenity: 3.4.0'
+  s.requirements << 'bash: GNU bash, version 4.2.25(1)-release (x86_64-pc-linux-gnu)'
+  s.requirements << 'system: linux/bash'
 
 end
