@@ -1,0 +1,3 @@
+module REMOTE_SYSTEM_CALL
+  VERSION = '0.0.0'
+end

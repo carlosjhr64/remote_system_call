@@ -1,0 +1,137 @@
+#!/usr/bin/env ruby
+
+# Standard Libraries
+require 'drb/drb'
+require 'json'
+require 'shellwords'
+require 'tempfile'
+
+# Gems
+require 'user_space'
+require 'help_parser'
+
+# This Gem
+require 'remote_system_call' 
+include REMOTE_SYSTEM_CALL
+
+NAME = File.basename($0) # remote_system_call
+VERSION = '0.0.0'
+HELP = <<HELP
+Usage: #{NAME} [options] [command]
+Options:
+  -d --daemon
+  -p --password   Enter a password.
+  -t --tty        Use terminal(instead of zenity).
+Hard coded commands:
+  exit       Ask the server to quit.
+  commands   Lists the system calls.
+Local system calls:
+#{CONFIG[:commands].map{|x|"  #{x[0]}\t'#{x[1]}'"}.join("\n")}
+Version: #{VERSION}
+HELP
+
+def message(msg, type=:info)
+  msg = JSON.pretty_generate msg unless String===msg
+  if OPTIONS[:tty]
+    case type
+    when :info
+      puts msg
+    when :error
+      STDERR.puts msg
+    end
+  else
+    if msg=~/\n/
+      tf = Tempfile.new('msg')
+      tf.puts msg
+      tf.close
+      # Has to be type text
+      cmd = CONFIG[:text].gsub(/\$1/, tf.path)
+      system(cmd)
+    else
+      cmd = CONFIG[type].gsub(/\$1/, Shellwords.escape(msg))
+      system(cmd)
+    end
+  end
+end
+
+def password
+  if pwd = OPTIONS[:password]
+    # If user specified pwd in the command line, use it.
+    # Else, use the :pwd system call to get the pwd.
+    if pwd==true
+      if OPTIONS[:tty]
+        print 'Password: '
+        pwd = STDIN.gets.strip
+      else
+        pwd = `#{CONFIG[:pwd]}`
+      end
+    end
+  else
+    pwd = ''
+  end
+  pwd
+end
+
+def rsc_call(*args)
+  nonce  = Time.now.to_i
+  digest = RemoteSystemCall.digest(nonce, SALTED)
+  RSC.call(nonce, digest, *args)
+end
+
+def argv
+  if OPTIONS[:tty]
+    print 'Command: '
+    STDIN.gets.strip.split(/\s+/).each{|arg| ARGV.push(arg)}
+  else
+    # Get the remote commands
+    commands = rsc_call('commands')
+    keys = commands.keys.join(' ')
+    cmd = CONFIG[:list]
+    cmd = cmd.gsub(/\$1/, keys)
+    key = `#{cmd}`.strip
+    ARGV.push(key)
+    if commands[key]=~/\$\d/
+      cmd = CONFIG[:entry]
+      `#{cmd}`.strip.split(/\s+/).each{|arg| ARGV.push(arg)}
+    end
+  end
+end
+
+begin
+  OPTIONS = HELP_PARSER::HelpParser.new(VERSION, HELP)
+  SALT, PORT, IP = File.read(File.join(XDG['CACHE'].to_s, 'lockscreen.pwd')).strip.split(/\s+/)
+  URI = "druby://#{IP}:#{PORT}"
+
+  SALTED = "#{SALT}#{password}"
+
+  if OPTIONS[:daemon]
+    # we're the server
+    rsc = RemoteSystemCall.new(SALTED)
+    DRb.start_service(URI, rsc)
+    Thread.new do
+      while not rsc.exit?
+        sleep 2
+      end
+      sleep 1
+      DRb.thread.kill
+    end
+    DRb.thread.join()
+  else
+    RSC = DRbObject.new_with_uri(URI)
+    begin
+      argv if ARGV.empty?
+      OPTIONS.usage_error 'Need command.' if ARGV.empty?
+      msg = rsc_call(*ARGV)
+      message(msg)
+    rescue ValidationError
+      msg = $!.message
+      message(msg, :error)
+    end
+  end
+
+rescue HELP_PARSER::UsageException
+  puts $!.message
+rescue HELP_PARSER::UsageError
+  STDERR.puts $!.message
+  exit 64
+end
