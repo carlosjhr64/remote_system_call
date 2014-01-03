@@ -19,10 +19,6 @@ module REMOTE_SYSTEM_CALL
       @exit
     end
 
-    def keys
-      commands.keys
-    end
-
     def call(nonce, digest, key, *args)
       nope! unless on_time?(nonce)
       nope! unless valid?(digest)
@@ -37,9 +33,16 @@ module REMOTE_SYSTEM_CALL
           i=0
           while arg = args.shift
             nope! unless arg=~/^\w+$/
+            # We've ensured that the argument is entirely \w+.
+            # It's up to the author of the system command
+            # to ensure the system call is safe under these conditions.
+            arg.untaint
             i+=1
             command = command.gsub(/\$#{i}/, arg)
           end
+          # Tainted commands are unexpected at this point.
+          # This is to ensure we did not accidently miss something.
+          nope!('Tainted Command') if command.tainted?
           return 'OK' if system(command)
           return "ERROR(#{$CHILD_STATUS})"
         end

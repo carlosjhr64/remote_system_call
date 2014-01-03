@@ -1,4 +1,8 @@
 #!/usr/bin/env ruby
+# Requires:
+#`ruby`
+#`zenity`
+#`bash`
 
 # Standard Libraries
 require 'drb/drb'
@@ -15,7 +19,6 @@ require 'remote_system_call'
 include REMOTE_SYSTEM_CALL
 
 NAME = File.basename($0) # remote_system_call
-VERSION = '0.0.0'
 HELP = <<HELP
 Usage: #{NAME} [options] [command]
 Options:
@@ -29,6 +32,7 @@ Local system calls:
 #{CONFIG[:commands].map{|x|"  #{x[0]}\t'#{x[1]}'"}.join("\n")}
 Version: #{VERSION}
 HELP
+# REMOTE_SYSTEM_CALL's VERSION
 
 def message(msg, type=:info)
   msg = JSON.pretty_generate msg unless String===msg
@@ -63,7 +67,7 @@ def password
         print 'Password: '
         pwd = STDIN.gets.strip
       else
-        pwd = `#{CONFIG[:pwd]}`
+        pwd = `#{CONFIG[:pwd]}`.strip
       end
     end
   else
@@ -126,6 +130,7 @@ begin
     rescue ValidationError
       msg = $!.message
       message(msg, :error)
+      exit 77 # Permision Error
     end
   end
 
@@ -133,5 +138,5 @@ rescue HELP_PARSER::UsageException
   puts $!.message
 rescue HELP_PARSER::UsageError
   STDERR.puts $!.message
-  exit 64
+  exit 64 # Usage Error
 end
