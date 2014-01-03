@@ -1,4 +1,5 @@
 History.txt
+Manifest.txt
 README.rdoc
 TODO.txt
 bin/remote_system_call
@@ -9,4 +10,5 @@ lib/remote_system_call.rb
 lib/remote_system_call/config.rb
 lib/remote_system_call/remote_system_call.rb
 lib/remote_system_call/version.rb
+remote_system_call.gemspec
 test/remote_system_call.rb

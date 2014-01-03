@@ -25,6 +25,7 @@ SUMMARY
   s.require_paths = ["lib"]
   s.files = %w(
 History.txt
+Manifest.txt
 README.rdoc
 TODO.txt
 bin/remote_system_call
@@ -35,6 +36,7 @@ lib/remote_system_call.rb
 lib/remote_system_call/config.rb
 lib/remote_system_call/remote_system_call.rb
 lib/remote_system_call/version.rb
+remote_system_call.gemspec
 test/remote_system_call.rb
   )
   s.executables << 'remote_system_call'
@@ -43,5 +45,6 @@ test/remote_system_call.rb
   s.add_development_dependency 'test-unit', '~> 2.5', '>= 2.5.5'
   s.requirements << 'system: linux/bash'
   s.requirements << 'ruby: ruby 2.0.0p247 (2013-06-27 revision 41674) [x86_64-linux]'
+  s.requirements << 'zenity: 3.4.0'
 
 end
