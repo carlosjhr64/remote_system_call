@@ -8,3 +8,4 @@ require 'remote_system_call/remote_system_call.rb'
 
 # Requires:
 #`ruby`
+#`zenity`
