@@ -6,7 +6,7 @@ module REMOTE_SYSTEM_CALL
 
   class RemoteSystemCall
     def self.digest(nonce, pwd)
-      Digest::SHA256.hexdigest("#{nonce}#{pwd}")
+      Digest::SHA256.base64digest("#{nonce}#{pwd}")
     end
 
     def initialize(pwd)
@@ -43,7 +43,7 @@ module REMOTE_SYSTEM_CALL
           # Tainted commands are unexpected at this point.
           # This is to ensure we did not accidently miss something.
           nope!('Tainted Command') if command.tainted?
-          return 'OK' if system(command)
+          return 'OK' if system("#{command} > /dev/null 2>&1 &")
           return "ERROR(#{$CHILD_STATUS})"
         end
       end

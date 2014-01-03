@@ -1,0 +1,45 @@
+{
+  "ip_address": null,
+  "port":       null,
+
+  "list":  "zenity --list --text='Command:' --hide-header --column 'Command:' $1   2> /dev/null",
+  "entry": "zenity --entry --text=Arguments                                        2> /dev/null",
+  "pwd":   "zenity --entry --text=Password --hide-text                             2> /dev/null",
+
+  "info":  "zenity --info --text=$1    > /dev/null   2>&1   &",
+  "error": "zenity --error --text=$1   > /dev/null   2>&1   &",
+
+  "text":  "zenity --text-info --filename=$1   > /dev/null   2>&1",
+
+
+
+  "commands": {
+
+    "play-pause":  "rhythmbox-client --play-pause",
+    "next":        "rhythmbox-client --next",
+    "previous":    "rhythmbox-client --previous",
+    "volume-up":   "rhythmbox-client --volume-up",
+    "volume-down": "rhythmbox-client --volume-down",
+
+    "screensaver-loack":      "gnome-screensaver-command --lock",
+    "screensaver-deactivate": "gnome-screensaver-command --deactivate",
+
+    "pandora":         "chromium-browser http://www.pandora.com",
+    "kill-browser":    "killall -s 2 chromium-browser",
+    "browser-restore": "chromium-browser --restore-last-session",
+
+    "audio-mute":   "pactl set-sink-mute 0 1",
+    "audio-unmute": "pactl set-sink-mute 0 0",
+
+    "vol100": "amixer -c 0 set Master playback 100%",
+    "vol75":  "amixer -c 0 set Master playback 75%",
+    "vol50":  "amixer -c 0 set Master playback 50%",
+    "vol25":  "amixer -c 0 set Master playback 25%",
+
+    "unity-restart": "unity",
+
+    "time": "espeak \"`date \"+It is %_I:%M %p\"`\"",
+
+    "testing123": "espeak 'Testing: $1, $2, $3.'"
+  }
+}

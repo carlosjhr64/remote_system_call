@@ -9,6 +9,8 @@ require 'drb/drb'
 require 'json'
 require 'shellwords'
 require 'tempfile'
+require 'socket'
+require 'securerandom'
 
 # Gems
 require 'user_space'
@@ -18,18 +20,43 @@ require 'help_parser'
 require 'remote_system_call' 
 include REMOTE_SYSTEM_CALL
 
+USERSPACE = USER_SPACE::UserSpace.new
+USERSPACE.install unless USERSPACE.version == VERSION
+USERSPACE.config.each{|lopt, value| CONFIG[lopt.to_sym] = value}
+# Pad up missing values:
+unless CONFIG[:ip_address]
+  if ip = Socket.ip_address_list.detect{|intf| intf.ipv4_private?}
+    CONFIG[:ip_address] = ip.ip_address
+  else
+    CONFIG[:ip_address] = ''
+  end
+end
+unless CONFIG[:port]
+  CONFIG[:port] = 0
+end
+
 NAME = File.basename($0) # remote_system_call
 HELP = <<HELP
 Usage: #{NAME} [options] [command]
 Options:
-  -d --daemon
+  -d --daemon     Run the server.
   -p --password   Enter a password.
+
+  --ip-address=IP Defaults to '#{CONFIG[:ip_address]}'
+  --port=PORT     Defaults to '#{CONFIG[:port]}'
+
   -t --tty        Use terminal(instead of zenity).
+
+  --re-salt       Generates a new random salt.
+  --dump-salt     Dump secret salt and exit.
+  --load-salt     Enter a new salt via STDIN and exit.
 Hard coded commands:
-  exit       Ask the server to quit.
-  commands   Lists the system calls.
+  exit            Ask the server to quit.
+  commands        List the remote system calls.
 Local system calls:
-#{CONFIG[:commands].map{|x|"  #{x[0]}\t'#{x[1]}'"}.join("\n")}
+#{CONFIG[:commands].map{|x|"  #{x[0].ljust(16)}#{x[1]}"}.join("\n")}
+You can add sytem calls by editing the configuration:
+  ~/.cofig/#{NAME}/config.json
 Version: #{VERSION}
 HELP
 # REMOTE_SYSTEM_CALL's VERSION
@@ -103,15 +130,33 @@ end
 
 begin
   OPTIONS = HELP_PARSER::HelpParser.new(VERSION, HELP)
-  SALT, PORT, IP = File.read(File.join(XDG['CACHE'].to_s, 'lockscreen.pwd')).strip.split(/\s+/)
-  URI = "druby://#{IP}:#{PORT}"
 
-  SALTED = "#{SALT}#{password}"
+  # Create salt file if missing or re-salting.
+  SALTFILE = File.join(XDG['CACHE'].to_s, 'salt')
+  if OPTIONS[:re_salt] or !File.exist?(SALTFILE)
+    File.open(SALTFILE, 'w', 0600){|fh| fh.puts SecureRandom.urlsafe_base64(33)}
+  end
+  if OPTIONS[:dump_salt]
+    puts File.read(SALTFILE).strip
+    exit
+  end
+  if OPTIONS[:load_salt]
+    print 'Salt: '
+    salt = STDIN.gets.strip
+    File.open(SALTFILE, 'w', 0600){|fh| fh.puts salt}
+    exit
+  end
+
+  IP     = OPTIONS[:ip_address, CONFIG[:ip_address]]
+  PORT   = OPTIONS[:port,       CONFIG[:port]]
+  URI    = "druby://#{IP}:#{PORT}"
+  SALTED = RemoteSystemCall.digest(File.read(SALTFILE).strip, password)
 
   if OPTIONS[:daemon]
     # we're the server
     rsc = RemoteSystemCall.new(SALTED)
     DRb.start_service(URI, rsc)
+    puts DRb.uri
     Thread.new do
       while not rsc.exit?
         sleep 2
@@ -139,4 +184,6 @@ rescue HELP_PARSER::UsageException
 rescue HELP_PARSER::UsageError
   STDERR.puts $!.message
   exit 64 # Usage Error
+rescue DRb::DRbConnError
+  message('Connection Error', :error)
 end
