@@ -2,15 +2,15 @@
 
 == DESCRIPTION:
 
-TODO:
+Stuff about this gem.
 
 == SYNOPSIS:
 
-TODO:
+Yep, need a synopsis.
 
 == FEATURES/PROBLEMS:
 
-TODO:
+Work in progress.
 
 == INSTALL:
 
