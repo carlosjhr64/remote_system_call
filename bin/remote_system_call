@@ -56,7 +56,7 @@ Hard coded commands:
 Local system calls:
 #{CONFIG[:commands].map{|x|"  #{x[0].ljust(16)}#{x[1]}"}.join("\n")}
 You can add sytem calls by editing the configuration:
-  ~/.cofig/#{NAME}/config.json
+  ~/.config/#{NAME}/config.json
 Version: #{VERSION}
 HELP
 # REMOTE_SYSTEM_CALL's VERSION
@@ -103,10 +103,10 @@ def password
   pwd
 end
 
-def rsc_call(*args)
+def execute(*args)
   nonce  = Time.now.to_i
   digest = RemoteSystemCall.digest(nonce, SALTED)
-  RSC.call(nonce, digest, *args)
+  RSC.execute(nonce, digest, *args)
 end
 
 def argv
@@ -115,7 +115,7 @@ def argv
     STDIN.gets.strip.split(/\s+/).each{|arg| ARGV.push(arg)}
   else
     # Get the remote commands
-    commands = rsc_call('commands')
+    commands = execute('commands')
     keys = commands.keys.join(' ')
     cmd = CONFIG[:list]
     cmd = cmd.gsub(/\$1/, keys)
@@ -128,13 +128,14 @@ def argv
   end
 end
 
+CONNECTFILE = File.join(USERSPACE.cachedir, 'connect')
 begin
   OPTIONS = HELP_PARSER::HelpParser.new(VERSION, HELP)
 
   # Create salt file if missing or re-salting.
-  SALTFILE = File.join(XDG['CACHE'].to_s, 'salt')
+  SALTFILE = File.join(USERSPACE.cachedir, 'salt')
   if OPTIONS[:re_salt] or !File.exist?(SALTFILE)
-    File.open(SALTFILE, 'w', 0600){|fh| fh.puts SecureRandom.urlsafe_base64(33)}
+    File.open(SALTFILE, 'w', 0600){|fh| fh.puts SecureRandom.base64(33)}
   end
   if OPTIONS[:dump_salt]
     puts File.read(SALTFILE).strip
@@ -146,31 +147,40 @@ begin
     File.open(SALTFILE, 'w', 0600){|fh| fh.puts salt}
     exit
   end
-
   IP     = OPTIONS[:ip_address, CONFIG[:ip_address]]
   PORT   = OPTIONS[:port,       CONFIG[:port]]
   URI    = "druby://#{IP}:#{PORT}"
   SALTED = RemoteSystemCall.digest(File.read(SALTFILE).strip, password)
 
   if OPTIONS[:daemon]
-    # we're the server
-    rsc = RemoteSystemCall.new(SALTED)
-    DRb.start_service(URI, rsc)
-    puts DRb.uri
-    Thread.new do
-      while not rsc.exit?
-        sleep 2
+    begin
+      # we're the server
+      rsc = RemoteSystemCall.new(SALTED)
+      DRb.start_service(URI, rsc)
+      File.open(CONNECTFILE, 'w', 0600){|fh| fh.puts DRb.uri}
+      if cmd = CONFIG[:scp]
+        cmd = cmd.sub(/\$1/, CONNECTFILE)
+        cmd = cmd.sub(/\$2/, SALTFILE)
+        system(cmd) or STDERR.puts 'Warning: SCP failed.'
       end
-      sleep 1
-      DRb.thread.kill
+      puts DRb.uri
+      Thread.new do
+        while not rsc.exit?
+          sleep 2
+        end
+        sleep 1
+        DRb.thread.kill
+      end
+      DRb.thread.join()
+    ensure
+      File.unlink(CONNECTFILE) if File.exist?(CONNECTFILE)
     end
-    DRb.thread.join()
   else
     RSC = DRbObject.new_with_uri(URI)
     begin
       argv if ARGV.empty?
       OPTIONS.usage_error 'Need command.' if ARGV.empty?
-      msg = rsc_call(*ARGV)
+      msg = execute(*ARGV)
       message(msg)
     rescue ValidationError
       msg = $!.message

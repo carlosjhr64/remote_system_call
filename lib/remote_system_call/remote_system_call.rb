@@ -19,7 +19,7 @@ module REMOTE_SYSTEM_CALL
       @exit
     end
 
-    def rsc(nonce, digest, key, *args)
+    def execute(nonce, digest, key, *args)
       nope! unless on_time?(nonce)
       nope! unless valid?(digest)
       case key
