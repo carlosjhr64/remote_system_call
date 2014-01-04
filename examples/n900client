@@ -1,0 +1,58 @@
+#!/usr/bin/ruby
+require 'drb'
+require 'digest'
+
+options = ''
+while ARGV[0]=~/^-/
+  options += ARGV.shift
+end
+
+begin
+
+  salt, ip, port = File.read(File.expand_path('~/.cache/remote_system_call/connect')).strip.split(/\s+/)
+  uri = "druby://#{ip}:#{port}"
+  drb = DRbObject.new_with_uri(uri)
+
+  pwd = `zenity --entry --text=Password --hide-text`.strip
+  salted = Digest::SHA256.hexdigest("#{salt}#{pwd}")
+
+  nonce = Time.now.to_i - 1
+  digest = Digest::SHA256.hexdigest("#{nonce}#{salted}")
+  commands = drb.rsc(nonce, digest, 'commands')
+
+  unless command = ARGV.shift
+    list = commands.keys.join(' ')
+    command = `zenity --list --text='Command:' --column 'Command:' #{list}`.strip
+  end
+
+  if command.length > 0
+    match = /^.*\$(\d)/.match(commands[command])
+    arity = (match)? match[1].to_i : 0
+    if ARGV.empty? and arity  > 0
+      `zenity --entry --text=Arguments`.strip.split(/\s+/).each{|arg| ARGV.push(arg)}
+    end
+    raise "Args length #{ARGV.length} vs. command arity #{arity}" unless ARGV.length == arity
+
+    nonce = Time.now.to_i
+    digest = Digest::SHA256.hexdigest("#{nonce}#{salted}")
+    response = drb.rsc(nonce, digest, command, *ARGV)
+
+    response = response.to_s.strip.gsub(/'/, '').gsub(/\s+/, ' ')
+    system("zenity --info --text='#{response}'")
+  end
+
+rescue RuntimeError
+  # In case anybody is watching STDERR:
+  STDERR.puts $!
+  STDERR.puts $!.backtrace if options=~/-v/
+  # In GUI, we'll just assume validation error:
+  system("zenity --error --text='#{$!.message.gsub(/'/,'')}'")
+  exit 69
+rescue Exception
+  # In case anybody is watching STDERR:
+  STDERR.puts $!
+  STDERR.puts $!.backtrace if options=~/-v/
+  # In GUI, we'll just assume validation error:
+  system("zenity --error --text='Validation Error'")
+  exit 64
+end

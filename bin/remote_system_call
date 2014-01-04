@@ -103,14 +103,14 @@ def password
   pwd
 end
 
-def execute(*args)
-  nonce  = Time.now.to_i
+def execute(*args, dt=0)
+  nonce  = Time.now.to_i + dt
   digest = RemoteSystemCall.digest(nonce, SALTED)
   RSC.execute(nonce, digest, *args)
 end
 
 def argv
-  commands = execute('commands')
+  commands = execute('commands', -1)
 
   unless command = ARGV.shift
     if OPTIONS[:tty]
