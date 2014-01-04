@@ -8,15 +8,19 @@ Gem::Specification.new do |s|
   s.author   = 'CarlosJHR64'
   s.email    = 'carlosjhr64@gmail.com'
 
-  s.date     = '2014-01-03'
+  s.date     = '2014-01-04'
   s.licenses = ['MIT']
 
   s.description = <<DESCRIPTION
-Stuff about this gem.
+Use your N900 to send system calls to your Ubuntu desktop.
+
+Deactivate your screen lock.
+Mute your audio.
+Have the next song play on Rhythmbox.
 DESCRIPTION
 
   s.summary = <<SUMMARY
-Stuff about this gem.
+Use your N900 to send system calls to your Ubuntu desktop.
 SUMMARY
 
   s.extra_rdoc_files = ['README.rdoc']
@@ -31,6 +35,7 @@ TODO.txt
 bin/remote_system_call
 config/config.json
 data/VERSION
+examples/n900client
 features/main.feature
 features/step_definitions/main_steps.rb
 lib/remote_system_call.rb
@@ -48,5 +53,7 @@ test/remote_system_call.rb
   s.requirements << 'zenity: 3.4.0'
   s.requirements << 'bash: GNU bash, version 4.2.25(1)-release (x86_64-pc-linux-gnu)'
   s.requirements << 'system: linux/bash'
+  s.requirements << 'strip in development: GNU strip (GNU Binutils for Ubuntu) 2.22'
+  s.requirements << 'zenity in development: 3.4.0'
 
 end

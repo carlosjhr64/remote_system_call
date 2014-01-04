@@ -5,6 +5,7 @@ TODO.txt
 bin/remote_system_call
 config/config.json
 data/VERSION
+examples/n900client
 features/main.feature
 features/step_definitions/main_steps.rb
 lib/remote_system_call.rb
