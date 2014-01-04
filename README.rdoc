@@ -1,20 +1,70 @@
 = remote_system_call
 
+github  :: https://www.github.com/carlosjhr64/remote_system_call
+
 == DESCRIPTION:
 
-Stuff about this gem.
+Use your N900 to send system calls to your Ubuntu desktop.
+
+Deactivate your screen lock.
+Mute your audio.
+Have the next song play on Rhythmbox.
+
+This gem uses DRb to allow one to remotely run their choice of
+a list of preconfigured system commands. Such as:
+
+   system('rhythmbox-client --play-pause > /dev/null 2>&1 &')
+
+The actual line of code is:
+
+   return 'OK' if system("#{command} > /dev/null 2>&1 &")
+
+You can't run an arbitrary command, though.
+The commands are selected from a list in you configuration file, for example:
+
+   "rb:play-pause":  "rhythmbox-client --play-pause",
+
+Although messages are sent in the clear,
+messages are signed and timestamped,
+making it impossible for anybody without the proper salt and password
+to send a valid message.
 
 == SYNOPSIS:
 
-Yep, need a synopsis.
+   remote_system_call --help
+   remote_system_call --daemon # runs the DRb server
+   remote_system_call exit # to ask the DRb server to quit
+   remote_system_call commands # list of the available DRb commands
 
 == FEATURES/PROBLEMS:
 
-Work in progress.
+* Signed and timestamped messages with salted password.
+* Configurable system calls.
 
 == INSTALL:
 
-  $ sudo gem install remote_system_call
+I have not published this on rubygems.org.
+So you'll need to do this from a git clone.
+From your cloned diretory:
+
+   $ gem build ./remote_system_call.gemspec
+   $ sudo gem install ./remote_system_call-0.0.0.gem
+
+The code was written in ruby 2, so N900's ruby 1.8 won't run this gem.
+But I have a stripped down client in the examples directory.
+I setup a home bin directory on the N900 and copy over the script:
+
+   $ scp ./examples/n900client user@where.n900.is:bin/remote_system_call
+
+Once you have a server running on the desktop, copy over the cache files for the connection:
+
+   $ scp ~/.cache/remote_system_call/* user@where.n900.is:.cache/remote_system_call/
+
+And you'll be able to run the client on the N900.
+I recommend using Queen Beecon Widget[http://wiki.maemo.org/Queen_BeeCon_Widget].
+Give Queen Beecon Widget the following command:
+
+   /home/user/bin/remote_system_call
 
 == LICENSE:
 
