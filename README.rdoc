@@ -20,7 +20,7 @@ The actual line of code is:
    return 'OK' if system("#{command} > /dev/null 2>&1 &")
 
 You can't run an arbitrary command, though.
-The commands are selected from a list in you configuration file, for example:
+The commands are selected from a list in your configuration file, for example:
 
    "rb:play-pause":  "rhythmbox-client --play-pause",
 
