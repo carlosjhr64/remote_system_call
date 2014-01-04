@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 require 'drb'
 require 'digest'
+require 'timeout'
 
 options = ''
 while ARGV[0]=~/^-/
@@ -9,19 +10,22 @@ end
 
 begin
 
-  salt, ip, port = File.read(File.expand_path('~/.cache/remote_system_call/connect')).strip.split(/\s+/)
-  uri = "druby://#{ip}:#{port}"
-  drb = DRbObject.new_with_uri(uri)
+  salt = File.read(File.expand_path('~/.cache/remote_system_call/salt')).strip
+  uri  = File.read(File.expand_path('~/.cache/remote_system_call/connect')).strip
+  drb  = DRbObject.new_with_uri(uri)
 
   pwd = `zenity --entry --text=Password --hide-text`.strip
   salted = Digest::SHA256.hexdigest("#{salt}#{pwd}")
 
   nonce = Time.now.to_i - 1
   digest = Digest::SHA256.hexdigest("#{nonce}#{salted}")
-  commands = drb.rsc(nonce, digest, 'commands')
+  commands = nil
+  Timeout::timeout(3.0) do
+    commands = drb.execute(nonce, digest, 'commands')
+  end
 
   unless command = ARGV.shift
-    list = commands.keys.join(' ')
+    list = commands.keys.sort.join(' ')
     command = `zenity --list --text='Command:' --column 'Command:' #{list}`.strip
   end
 
@@ -35,24 +39,18 @@ begin
 
     nonce = Time.now.to_i
     digest = Digest::SHA256.hexdigest("#{nonce}#{salted}")
-    response = drb.rsc(nonce, digest, command, *ARGV)
+    response = drb.execute(nonce, digest, command, *ARGV)
 
     response = response.to_s.strip.gsub(/'/, '').gsub(/\s+/, ' ')
     system("zenity --info --text='#{response}'")
   end
 
-rescue RuntimeError
-  # In case anybody is watching STDERR:
-  STDERR.puts $!
-  STDERR.puts $!.backtrace if options=~/-v/
-  # In GUI, we'll just assume validation error:
-  system("zenity --error --text='#{$!.message.gsub(/'/,'')}'")
-  exit 69
 rescue Exception
   # In case anybody is watching STDERR:
   STDERR.puts $!
   STDERR.puts $!.backtrace if options=~/-v/
-  # In GUI, we'll just assume validation error:
-  system("zenity --error --text='Validation Error'")
-  exit 64
+  type = $!.class
+  type = 'ValidationError' if type=~/Unknown/i
+  system("zenity --error --text='#{type}'")
+  exit 1
 end
