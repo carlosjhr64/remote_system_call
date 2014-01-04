@@ -6,7 +6,7 @@ module REMOTE_SYSTEM_CALL
 
   class RemoteSystemCall
     def self.digest(nonce, pwd)
-      Digest::SHA256.base64digest("#{nonce}#{pwd}")
+      Digest::SHA256.hexdigest("#{nonce}#{pwd}")
     end
 
     def initialize(pwd)
@@ -19,7 +19,7 @@ module REMOTE_SYSTEM_CALL
       @exit
     end
 
-    def call(nonce, digest, key, *args)
+    def rsc(nonce, digest, key, *args)
       nope! unless on_time?(nonce)
       nope! unless valid?(digest)
       case key
@@ -59,9 +59,10 @@ module REMOTE_SYSTEM_CALL
 
     def on_time?(nonce)
       now = Time.now.to_i
+      dt = (CONFIG[:max_time_error] || 60).to_i
       return false if nonce < @nonce   or
-                      nonce > now + 30 or
-                      nonce < now - 30
+                      nonce > now + dt or
+                      nonce < now - dt
       # We now know someone is trying to get in with a current nonce.
       # We don't let them reuse this nonce, or any priors.
       @nonce = nonce

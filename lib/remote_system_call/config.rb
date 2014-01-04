@@ -4,6 +4,8 @@ module REMOTE_SYSTEM_CALL
   # User can modify in:
   #    ~/.config/remote_system_call/config.json
   CONFIG = {
+    # How much is the client's clock allowed to differ(in seconds)?
+    :max_time_error => 60,
     # System Call Commands
     :commands => { },
   }

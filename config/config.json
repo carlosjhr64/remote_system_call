@@ -4,6 +4,9 @@
   "ip_address": null,
   "port":       null,
 
+  "comment":"How much is the client's clock allowed to differ(in seconds)?",
+  "max_time_error": 60,
+
   "comment":"Optional scp command to send connection details you the client.",
   "comment":"Example:  scp ~/.cache/remote_system_call/* user@where.n900.is:.cache/remote_system_call/",
   "scp": null,
