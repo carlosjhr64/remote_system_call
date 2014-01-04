@@ -53,7 +53,6 @@ test/remote_system_call.rb
   s.requirements << 'zenity: 3.4.0'
   s.requirements << 'bash: GNU bash, version 4.2.25(1)-release (x86_64-pc-linux-gnu)'
   s.requirements << 'system: linux/bash'
-  s.requirements << 'strip in development: GNU strip (GNU Binutils for Ubuntu) 2.22'
   s.requirements << 'zenity in development: 3.4.0'
 
 end
