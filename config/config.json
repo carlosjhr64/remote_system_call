@@ -1,45 +1,61 @@
 {
+
+  "comment":"The uri components 'druby://ip_address:port'",
   "ip_address": null,
   "port":       null,
 
+  "comment":"Optional scp command to send connection details you the client.",
+  "comment":"Example:  scp ~/.cache/remote_system_call/* user@where.n900.is:.cache/remote_system_call/",
+  "scp": null,
+
+  "comment":"Zenity provides GTK+ dialogs, and is available on linux and maemo/n900.",
+  "comment":"Zenity to get user inputs.",
   "list":  "zenity --list --text='Command:' --hide-header --column 'Command:' $1   2> /dev/null",
   "entry": "zenity --entry --text=Arguments                                        2> /dev/null",
   "pwd":   "zenity --entry --text=Password --hide-text                             2> /dev/null",
 
+  "comment":"Zenity to give user info.",
   "info":  "zenity --info --text=$1    > /dev/null   2>&1   &",
   "error": "zenity --error --text=$1   > /dev/null   2>&1   &",
 
+  "comment":"Zenity to give user more info.",
+  "comment":"The filename is a ruby tempfile, so can't background and leave the process.",
   "text":  "zenity --text-info --filename=$1   > /dev/null   2>&1",
 
 
+  "comment":"These are system calls I like for my Ubuntu desktop machine.",
+  "comment":"The keys are named so as to be sortable in a meaningful way.",
+  "comment":"Note that my browser is chromium, and I have that choice hard coded below.",
+  "comment":"",
 
   "commands": {
 
-    "play-pause":  "rhythmbox-client --play-pause",
-    "next":        "rhythmbox-client --next",
-    "previous":    "rhythmbox-client --previous",
-    "volume-up":   "rhythmbox-client --volume-up",
-    "volume-down": "rhythmbox-client --volume-down",
+    "rb:play-pause":  "rhythmbox-client --play-pause",
+    "rb:next":        "rhythmbox-client --next",
+    "rb:previous":    "rhythmbox-client --previous",
+    "rb:volume-up":   "rhythmbox-client --volume-up",
+    "rb:volume-down": "rhythmbox-client --volume-down",
 
-    "screensaver-loack":      "gnome-screensaver-command --lock",
-    "screensaver-deactivate": "gnome-screensaver-command --deactivate",
+    "screensaver:lock":      "gnome-screensaver-command --lock",
+    "screensaver:deactivate": "gnome-screensaver-command --deactivate",
 
-    "pandora":         "chromium-browser http://www.pandora.com",
-    "kill-browser":    "killall -s 2 chromium-browser",
-    "browser-restore": "chromium-browser --restore-last-session",
+    "browser:pandora": "chromium-browser http://www.pandora.com",
+    "browser:kill":    "killall -s 2 chromium-browser",
+    "browser:restore": "chromium-browser --restore-last-session",
 
-    "audio-mute":   "pactl set-sink-mute 0 1",
-    "audio-unmute": "pactl set-sink-mute 0 0",
+    "audio:mute":   "pactl set-sink-mute 0 1",
+    "audio:unmute": "pactl set-sink-mute 0 0",
 
-    "vol100": "amixer -c 0 set Master playback 100%",
-    "vol75":  "amixer -c 0 set Master playback 75%",
-    "vol50":  "amixer -c 0 set Master playback 50%",
-    "vol25":  "amixer -c 0 set Master playback 25%",
+    "vol:100": "amixer -c 0 set Master playback 100%",
+    "vol:75":  "amixer -c 0 set Master playback 75%",
+    "vol:50":  "amixer -c 0 set Master playback 50%",
+    "vol:25":  "amixer -c 0 set Master playback 25%",
 
-    "unity-restart": "unity",
+    "unity:restart": "unity",
 
-    "time": "espeak \"`date \"+It is %_I:%M %p\"`\"",
+    "time:now": "espeak \"`date \"+It is %_I:%M %p\"`\"",
 
-    "testing123": "espeak 'Testing: $1, $2, $3.'"
+    "testing:123": "espeak 'Testing: $1, $2, $3.'"
   }
+
 }
