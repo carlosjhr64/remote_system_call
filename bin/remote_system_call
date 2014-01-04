@@ -110,22 +110,42 @@ def execute(*args)
 end
 
 def argv
-  if OPTIONS[:tty]
-    print 'Command: '
-    STDIN.gets.strip.split(/\s+/).each{|arg| ARGV.push(arg)}
-  else
-    # Get the remote commands
-    commands = execute('commands')
-    keys = commands.keys.join(' ')
-    cmd = CONFIG[:list]
-    cmd = cmd.gsub(/\$1/, keys)
-    key = `#{cmd}`.strip
-    ARGV.push(key)
-    if commands[key]=~/\$\d/
-      cmd = CONFIG[:entry]
-      `#{cmd}`.strip.split(/\s+/).each{|arg| ARGV.push(arg)}
+  commands = execute('commands')
+
+  unless command = ARGV.shift
+    if OPTIONS[:tty]
+      print 'Command: '
+      STDIN.gets.strip.split(/\s+/).each{|arg| ARGV.push(arg)}
+      command = ARGV.shift
+    else
+      # Get the remote commands
+      keys = commands.keys.sort.join(' ')
+      cmd = CONFIG[:list]
+      cmd = cmd.gsub(/\$1/, keys)
+      command = `#{cmd}`.strip
     end
   end
+
+  if command and command.length > 0
+    match = /^.*\$(\d)/.match(commands[command])
+    arity = (match)? match[1].to_i : 0
+    if ARGV.empty? and arity > 0
+      if OPTIONS[:tty]
+        print 'Arguments: '
+        STDIN.gets.strip.split(/\s+/).each{|arg| ARGV.push(arg)}
+      else
+        cmd = CONFIG[:entry]
+        `#{cmd}`.strip.split(/\s+/).each{|arg| ARGV.push(arg)}
+      end
+    end
+    raise "args(#{ARGV.length})!=arity(#{arity})" unless ARGV.length == arity
+    ARGV.unshift(command)
+    return true
+  else
+    return false
+  end
+
+  raise "Unexpected program flow"
 end
 
 CONNECTFILE = File.join(USERSPACE.cachedir, 'connect')
@@ -147,10 +167,11 @@ begin
     File.open(SALTFILE, 'w', 0600){|fh| fh.puts salt}
     exit
   end
+  SALTED = RemoteSystemCall.digest(File.read(SALTFILE).strip, password)
+
   IP     = OPTIONS[:ip_address, CONFIG[:ip_address]]
   PORT   = OPTIONS[:port,       CONFIG[:port]]
   URI    = "druby://#{IP}:#{PORT}"
-  SALTED = RemoteSystemCall.digest(File.read(SALTFILE).strip, password)
 
   if OPTIONS[:daemon]
     begin
@@ -176,10 +197,11 @@ begin
       File.unlink(CONNECTFILE) if File.exist?(CONNECTFILE)
     end
   else
-    RSC = DRbObject.new_with_uri(URI)
+    uri = (File.exist?(CONNECTFILE))? File.read(CONNECTFILE).strip : URI
+    RSC = DRbObject.new_with_uri(uri)
+    STDERR.puts uri
     begin
-      argv if ARGV.empty?
-      OPTIONS.usage_error 'Need command.' if ARGV.empty?
+      OPTIONS.usage_error 'Need command.' unless argv
       msg = execute(*ARGV)
       message(msg)
     rescue ValidationError
@@ -196,4 +218,6 @@ rescue HELP_PARSER::UsageError
   exit 64 # Usage Error
 rescue DRb::DRbConnError
   message('Connection Error', :error)
+rescue RuntimeError
+  message($!.message, :error)
 end
